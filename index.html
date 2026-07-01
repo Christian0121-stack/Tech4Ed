@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>City of Balanga Tech4ed Training Center</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet Routing Machine CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+  <style>
+    /* ── Reset & Base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-900: #0d2a6e;
+      --blue-800: #1a3a8f;
+      --blue-700: #1d4ed8;
+      --blue-600: #2563eb;
+      --blue-500: #3b82f6;
+      --blue-100: #dbeafe;
+      --blue-50:  #eff6ff;
+      --yellow-500: #eab308;
+      --yellow-400: #facc15;
+      --yellow-300: #fde047;
+      --yellow-100: #fef9c3;
+      --white:   #ffffff;
+      --gray-100:#f1f5f9;
+      --gray-600:#475569;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--blue-900);
+      color: var(--blue-900);
+      overflow: hidden;
+    }
+
+    .page-wrapper {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ───────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 60%, var(--blue-700) 100%);
+      color: var(--white);
+      padding: 0 1.25rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,.45);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -60px;
+      width: 200px; height: 200px;
+      background: rgba(234,179,8,.1);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .header-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-badge {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+      font-size: clamp(.95rem, 3vw, 1.35rem);
+      font-weight: 800;
+      letter-spacing: .01em;
+      line-height: 1.2;
+    }
+    .header-text h1 span { color: var(--yellow-400); }
+    .header-text .tagline {
+      font-size: .75rem;
+      color: var(--blue-100);
+      margin-top: .18rem;
+      letter-spacing: .03em;
+    }
+
+    /* ── Hero / CTA ───────────────────────────────────── */
+    .hero-section {
+      background: var(--white);
+      border-bottom: 3px solid var(--yellow-400);
+      padding: .9rem 1.25rem;
+      flex-shrink: 0;
+      z-index: 9;
+      box-shadow: 0 2px 12px rgba(0,0,0,.1);
+    }
+
+    .hero-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-text {
+      display: flex;
+      align-items: flex-start;
+      gap: .65rem;
+    }
+    .hero-icon {
+      font-size: 1.8rem;
+      flex-shrink: 0;
+      animation: bounce-subtle 2s ease-in-out infinite;
+    }
+    @keyframes bounce-subtle {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-4px); }
+    }
+    .hero-label {
+      font-size: clamp(.85rem, 2.5vw, 1rem);
+      font-weight: 600;
+      color: var(--blue-800);
+      line-height: 1.4;
+    }
+    .hero-sub {
+      font-size: .75rem;
+      color: var(--gray-600);
+      margin-top: .15rem;
+    }
+
+    /* ── Find Button ─────────────────────────────────── */
+    #btn-find {
+      background: linear-gradient(135deg, var(--yellow-400), var(--yellow-500));
+      color: var(--blue-900);
+      border: none;
+      border-radius: 50px;
+      padding: .65rem 1.8rem;
+      font-size: .95rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      box-shadow: 0 4px 16px rgba(234,179,8,.45);
+      transition: transform .18s, box-shadow .18s;
+      letter-spacing: .02em;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    #btn-find:hover  { transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 24px rgba(234,179,8,.55); }
+    #btn-find:active { transform: scale(.97); }
+    #btn-find:disabled { opacity: .65; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Status bar ──────────────────────────────────── */
+    #status-bar {
+      max-width: 1000px;
+      margin: .55rem auto 0;
+      width: 100%;
+      display: none;
+      align-items: center;
+      gap: .55rem;
+      padding: .45rem .9rem;
+      border-radius: 8px;
+      font-size: .8rem;
+      font-weight: 600;
+      animation: fade-in .3s ease;
+    }
+    #status-bar.show    { display: flex; }
+    #status-bar.info    { background: var(--blue-100);  color: var(--blue-800); }
+    #status-bar.success { background: #dcfce7;           color: #166534; }
+    #status-bar.error   { background: #fee2e2;           color: #991b1b; }
+    #status-bar.warning { background: var(--yellow-100); color: #92400e; }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2.5px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Map wrapper ─────────────────────────────────── */
+    .map-wrapper {
+      flex: 1 1 auto;
+      position: relative;
+      min-height: 0;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Map start overlay ───────────────────────────── */
+    .map-overlay-start {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(13,42,110,.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 800;
+      transition: opacity .45s;
+    }
+    .map-overlay-start.hidden { opacity: 0; pointer-events: none; }
+
+    .overlay-card {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 2rem 2.5rem;
+      text-align: center;
+      box-shadow: 0 12px 48px rgba(0,0,0,.35);
+      border-top: 5px solid var(--yellow-400);
+      animation: pop-in .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(.8); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .overlay-icon { font-size: 3.2rem; margin-bottom: .6rem; }
+    .overlay-text { font-size: 1.05rem; font-weight: 700; color: var(--blue-800); }
+    .overlay-sub  { font-size: .8rem; color: var(--gray-600); margin-top: .3rem; }
+
+    /* ── Info panel (bottom center) ──────────────────── */
+    #info-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 900;
+      background: rgba(13,42,110,.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: .75rem 1.5rem;
+      box-shadow: 0 6px 32px rgba(0,0,0,.4);
+      display: none;
+      align-items: center;
+      gap: 1.2rem;
+      border: 1px solid rgba(250,204,21,.35);
+      width: max-content;
+      max-width: calc(100vw - 2rem);
+    }
+    #info-panel.show { display: flex; animation: slide-up .35s ease; }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .info-item { text-align: center; }
+    .info-value {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--yellow-400);
+      line-height: 1;
+    }
+    .info-label {
+      font-size: .65rem;
+      color: var(--blue-100);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-top: .25rem;
+    }
+    .info-divider {
+      width: 1px;
+      height: 34px;
+      background: rgba(250,204,21,.25);
+    }
+
+    /* ── Legend (top-left) ───────────────────────────── */
+    #legend {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 900;
+      background: rgba(13,42,110,.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: .65rem 1rem;
+      box-shadow: 0 4px 18px rgba(0,0,0,.35);
+      display: none;
+      flex-direction: column;
+      gap: .4rem;
+      font-size: .77rem;
+      font-weight: 600;
+      color: var(--white);
+      border: 1px solid rgba(250,204,21,.3);
+    }
+    #legend.show { display: flex; animation: fade-in .3s ease; }
+
+    .legend-row { display: flex; align-items: center; gap: .55rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .dot-user { background: var(--blue-500); border: 2px solid var(--white); }
+    .dot-dest { background: var(--yellow-400); border: 2px solid var(--white); }
+
+    /* ── Tech4ed permanent map label ─────────────────── */
+    .tech4ed-label {
+      background: var(--blue-900) !important;
+      color: var(--yellow-400) !important;
+      border: none !important;
+      border-radius: 8px !important;
+      padding: 5px 12px !important;
+      font-size: .92rem !important;
+      font-weight: 800 !important;
+      font-family: 'Segoe UI', sans-serif !important;
+      white-space: nowrap !important;
+      box-shadow: 0 3px 12px rgba(0,0,0,.4) !important;
+      letter-spacing: .02em !important;
+    }
+    .tech4ed-label::before { display: none !important; }
+
+    .entrance-label {
+      background: #166534 !important;
+      color: #bbf7d0 !important;
+      border: none !important;
+      border-radius: 6px !important;
+      padding: 4px 10px !important;
+      font-size: .78rem !important;
+      font-weight: 700 !important;
+      font-family: 'Segoe UI', sans-serif !important;
+      white-space: nowrap !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,.35) !important;
+      letter-spacing: .03em !important;
+    }
+    .entrance-label::before { display: none !important; }
+
+    .legend-line-dash {
+      width: 22px;
+      height: 2px;
+      flex-shrink: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        #ffffff 0px, #ffffff 5px,
+        transparent 5px, transparent 9px
+      );
+      border-radius: 2px;
+    }
+
+    /* ── Satellite toggle (top-right) ────────────────── */
+    #layer-toggle {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 900;
+      background: rgba(13,42,110,.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: .4rem .75rem;
+      box-shadow: 0 4px 18px rgba(0,0,0,.35);
+      display: flex;
+      gap: .35rem;
+      border: 1px solid rgba(250,204,21,.25);
+    }
+
+    .layer-btn {
+      background: transparent;
+      border: none;
+      color: var(--blue-100);
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: .3rem .6rem;
+      border-radius: 6px;
+      letter-spacing: .04em;
+      transition: background .15s, color .15s;
+    }
+    .layer-btn.active {
+      background: var(--yellow-400);
+      color: var(--blue-900);
+    }
+
+    /* ── COMPLETELY hide LRM routing panel ───────────── */
+    .leaflet-routing-container,
+    .leaflet-routing-container * {
+      display: none !important;
+    }
+
+    /* ── Footer ──────────────────────────────────────── */
+    footer {
+      background: var(--blue-900);
+      color: var(--blue-100);
+      text-align: center;
+      padding: .45rem 1rem;
+      font-size: .7rem;
+      flex-shrink: 0;
+      letter-spacing: .03em;
+      border-top: 2px solid rgba(250,204,21,.2);
+    }
+    footer span { color: var(--yellow-400); font-weight: 700; }
+
+    /* ── Responsive ──────────────────────────────────── */
+    @media (max-width: 580px) {
+      .hero-inner    { flex-direction: column; align-items: flex-start; }
+      #btn-find      { width: 100%; justify-content: center; }
+      #info-panel    { gap: .7rem; padding: .6rem 1rem; }
+      .info-value    { font-size: 1rem; }
+      .overlay-card  { padding: 1.4rem 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- ── Header ───────────────────────────────────────── -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-badge">
+        <img src="Official_Seal_Balanga_City.png" alt="Balanga City Seal"
+             style="width:44px;height:44px;border-radius:50%;object-fit:cover;" />
+      </div>
+      <div class="header-text">
+        <h1>City of Balanga <span>Tech4ed</span> Training Center</h1>
+        <p class="tagline">Technology for Education &nbsp;|&nbsp; Balanga City, Bataan</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Hero CTA ─────────────────────────────────────── -->
+  <div class="hero-section">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-icon">📍</div>
+        <div>
+          <p class="hero-label">Want to find the exact location of our Training Center?<br>Click <strong>Find</strong></p>
+          <p class="hero-sub">We'll use your GPS to show you the best route in real time.</p>
+        </div>
+      </div>
+      <button id="btn-find">
+        <span>🧭</span> Find
+      </button>
+    </div>
+    <div id="status-bar">
+      <div class="spinner" id="status-spinner" style="display:none"></div>
+      <span id="status-msg"></span>
+    </div>
+  </div>
+
+  <!-- ── Map ──────────────────────────────────────────── -->
+  <div class="map-wrapper">
+
+    <!-- Start overlay -->
+    <div class="map-overlay-start" id="map-overlay">
+      <div class="overlay-card">
+        <div class="overlay-icon">🛰️</div>
+        <div class="overlay-text">Satellite Navigation Ready</div>
+        <div class="overlay-sub">Press <strong>Find</strong> to load your live route</div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Layer toggle -->
+    <div id="layer-toggle">
+      <button class="layer-btn" id="btn-satellite" onclick="setLayer('satellite')">🛰️ Satellite</button>
+      <button class="layer-btn active" id="btn-street"    onclick="setLayer('street')">🗺️ Street</button>
+    </div>
+
+    <!-- Legend -->
+    <div id="legend">
+      <div class="legend-row">
+        <div class="legend-dot dot-user"></div>
+        <span>Your Location (Point A)</span>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot dot-dest"></div>
+        <span>Training Center (Point B)</span>
+      </div>
+    </div>
+
+    <!-- Info panel -->
+    <div id="info-panel">
+      <div class="info-item">
+        <div class="info-value" id="info-distance">—</div>
+        <div class="info-label">Distance</div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <div class="info-value" id="info-time">—</div>
+        <div class="info-label">Est. Time</div>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <div class="info-value" id="info-accuracy">—</div>
+        <div class="info-label">GPS Accuracy</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ───────────────────────────────────────── -->
+  <footer>
+    &copy; 2024 &nbsp;<span>City of Balanga Tech4ed Training Center</span>&nbsp; — All Rights Reserved
+  </footer>
+
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet Routing Machine -->
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Destination ──────────────────────────────────────────────── */
+  // DEST_ROUTE: road-accessible point where the route line ends (on the path)
+  const DEST_ROUTE = { lat: 14.6759911740282,   lng: 120.53598287734538 };
+  // DEST_PIN: exact building location for the marker
+  const DEST_PIN   = { lat: 14.675632420815127,  lng: 120.53611693164521 };
+
+  /* ── Elements ─────────────────────────────────────────────────── */
+  const btnFind       = document.getElementById('btn-find');
+  const statusBar     = document.getElementById('status-bar');
+  const statusSpinner = document.getElementById('status-spinner');
+  const statusMsg     = document.getElementById('status-msg');
+  const mapOverlay    = document.getElementById('map-overlay');
+  const legend        = document.getElementById('legend');
+  const infoPanel     = document.getElementById('info-panel');
+  const infoDist      = document.getElementById('info-distance');
+  const infoTime      = document.getElementById('info-time');
+  const infoAcc       = document.getElementById('info-accuracy');
+
+  /* ── Tile layers ──────────────────────────────────────────────── */
+  const TILES = {
+    satellite: L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 19,
+      }
+    ),
+    satelliteLabel: L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19, opacity: 0.8 }
+    ),
+    street: L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }
+    ),
+  };
+
+  /* ── Map init ─────────────────────────────────────────────────── */
+  const map = L.map('map', {
+    center: [DEST_PIN.lat, DEST_PIN.lng],
+    zoom: 15,
+    zoomControl: true,
+  });
+
+  /* Default: street view */
+  let currentLayer = 'street';
+  TILES.street.addTo(map);
+
+  /* ── Layer switcher (exposed to window for onclick) ─────────────── */
+  let satLabelOnMap = false;
+  window.setLayer = function (name) {
+    if (name === currentLayer) return;
+
+    /* Remove all tile layers */
+    if (map.hasLayer(TILES.street))        map.removeLayer(TILES.street);
+    if (map.hasLayer(TILES.satellite))     map.removeLayer(TILES.satellite);
+    if (map.hasLayer(TILES.satelliteLabel)){ map.removeLayer(TILES.satelliteLabel); satLabelOnMap = false; }
+
+    if (name === 'satellite') {
+      TILES.satellite.addTo(map);
+      TILES.satelliteLabel.addTo(map);
+      satLabelOnMap = true;
+    } else {
+      TILES.street.addTo(map);
+    }
+    currentLayer = name;
+
+    document.getElementById('btn-satellite').classList.toggle('active', name === 'satellite');
+    document.getElementById('btn-street').classList.toggle('active', name === 'street');
+  };
+
+  /* ── Custom marker icons ──────────────────────────────────────── */
+  function makeIcon(fillColor, label) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="52" viewBox="0 0 38 52">
+      <filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".35"/></filter>
+      <g filter="url(#shadow)">
+        <path d="M19 0C8.51 0 0 8.51 0 19c0 13.25 19 33 19 33S38 32.25 38 19C38 8.51 29.49 0 19 0z" fill="${fillColor}"/>
+        <circle cx="19" cy="19" r="10" fill="#fff" opacity=".9"/>
+      </g>
+      <text x="19" y="24" text-anchor="middle" font-size="11" font-weight="900"
+            font-family="'Segoe UI',sans-serif" fill="${fillColor}">${label}</text>
+    </svg>`;
+    return L.divIcon({
+      html: svg,
+      className: '',
+      iconSize: [38, 52],
+      iconAnchor: [19, 52],
+      popupAnchor: [0, -54],
+    });
+  }
+
+  const iconUser = makeIcon('#2563eb', 'A');
+  const iconDest = makeIcon('#eab308', 'B');
+
+  /* ── Destination marker ────────────────────────────────────────── */
+  const destMarker = L.marker([DEST_PIN.lat, DEST_PIN.lng], { icon: iconDest })
+    .addTo(map)
+    .bindTooltip('Tech4ed Training Center', {
+      permanent: true,
+      direction: 'right',
+      offset: [12, -20],
+      className: 'tech4ed-label',
+    })
+    .bindPopup(`
+      <div style="font-family:'Segoe UI',sans-serif;min-width:160px">
+        <div style="font-weight:800;color:#0d2a6e;font-size:.95rem;margin-bottom:.2rem">🏛️ Tech4ed Training Center</div>
+        <div style="font-size:.75rem;color:#475569">Point B &mdash; Your Destination</div>
+        <div style="font-size:.72rem;color:#2563eb;margin-top:.3rem">Balanga City, Bataan</div>
+      </div>
+    `, { maxWidth: 220 });
+
+  /* ── Entrance marker ──────────────────────────────────────────── */
+  const entranceIcon = L.divIcon({
+    html: `<div style="
+      background:#15803d;color:#ffffff;
+      font-size:1rem;font-weight:900;
+      font-family:'Segoe UI',sans-serif;
+      padding:6px 14px;border-radius:8px;
+      box-shadow:0 3px 14px rgba(0,0,0,.55);
+      white-space:nowrap;letter-spacing:.04em;
+      border:2px solid #bbf7d0;">
+      🚪 Tech4Ed Entrance
+    </div>`,
+    className: '',
+    iconAnchor: [0, 0],
+  });
+  L.marker([DEST_ROUTE.lat, DEST_ROUTE.lng], { icon: entranceIcon, interactive: false })
+    .addTo(map);
+
+  /* ── State ────────────────────────────────────────────────────── */
+  let userMarker  = null;
+  let routingCtrl = null;
+  let watchId     = null;
+  let routeActive = false;
+
+  /* ── Status helpers ───────────────────────────────────────────── */
+  function setStatus(type, msg, loading = false) {
+    statusBar.className = 'show ' + type;
+    statusMsg.textContent = msg;
+    statusSpinner.style.display = loading ? 'block' : 'none';
+  }
+
+  /* ── Format helpers ───────────────────────────────────────────── */
+  function fmtDist(m) {
+    return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m';
+  }
+  function fmtTime(s) {
+    if (s >= 3600) return (s / 3600).toFixed(1) + ' hr';
+    if (s >= 60)   return Math.round(s / 60) + ' min';
+    return Math.round(s) + ' sec';
+  }
+
+  /* ── Fallback straight line ───────────────────────────────────── */
+  let fallbackLine = null;
+  function drawFallbackLine(lat, lng) {
+    if (fallbackLine) map.removeLayer(fallbackLine);
+    fallbackLine = L.polyline(
+      [[lat, lng], [DEST_ROUTE.lat, DEST_ROUTE.lng]],
+      { color: '#facc15', weight: 4, opacity: .9, dashArray: '10 7' }
+    ).addTo(map);
+    map.fitBounds(fallbackLine.getBounds(), { padding: [60, 60] });
+  }
+
+  /* ── Update / build route ─────────────────────────────────────── */
+  function updateRoute(lat, lng) {
+    const wp = [L.latLng(lat, lng), L.latLng(DEST_ROUTE.lat, DEST_ROUTE.lng)];
+
+    if (routingCtrl) {
+      routingCtrl.setWaypoints(wp);
+      return;
+    }
+
+    routingCtrl = L.Routing.control({
+      waypoints: wp,
+      routeWhileDragging: false,
+      showAlternatives: false,
+      fitSelectedRoutes: true,
+      addWaypoints: false,
+      /* ── Route line style ── */
+      lineOptions: {
+        styles: [
+          { color: '#1e40af', opacity: .3,  weight: 14 },
+          { color: '#facc15', opacity: .9,  weight: 5  },
+          { color: '#ffffff', opacity: .5,  weight: 2  },
+        ],
+        extendToWaypoints: false,
+        missingRouteTolerance: 0,
+      },
+      /* ── Suppress LRM markers; we manage our own ── */
+      createMarker: function () { return null; },
+      router: L.Routing.osrmv1({
+        serviceUrl: 'https://router.project-osrm.org/route/v1',
+        profile: 'driving',
+      }),
+    }).addTo(map);
+
+    routingCtrl.on('routesfound', function (e) {
+      const s = e.routes[0].summary;
+      infoDist.textContent = fmtDist(s.totalDistance);
+      infoTime.textContent = fmtTime(s.totalTime);
+      infoPanel.classList.add('show');
+      legend.classList.add('show');
+    });
+
+    routingCtrl.on('routingerror', function () {
+      setStatus('warning', '⚠️ Road route unavailable — showing straight-line path.');
+      drawFallbackLine(lat, lng);
+    });
+  }
+
+  /* ── Position callback ────────────────────────────────────────── */
+  function onPosition(pos) {
+    const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+
+    infoAcc.textContent = Math.round(accuracy) + ' m';
+
+    if (userMarker) {
+      userMarker.setLatLng([lat, lng]);
+    } else {
+      userMarker = L.marker([lat, lng], { icon: iconUser })
+        .addTo(map)
+        .bindPopup(`
+          <div style="font-family:'Segoe UI',sans-serif">
+            <div style="font-weight:800;color:#1d4ed8;font-size:.95rem">📍 Your Location</div>
+            <div style="font-size:.75rem;color:#475569;margin-top:.15rem">Point A &mdash; You are here</div>
+          </div>
+        `, { maxWidth: 200 });
+    }
+
+    updateRoute(lat, lng);
+
+    if (!routeActive) {
+      routeActive = true;
+      btnFind.disabled = false;
+      btnFind.innerHTML = '<span>🔄</span> Tracking…';
+      setStatus('success', '✅ Live tracking active — path updates as you move.');
+      mapOverlay.classList.add('hidden');
+    }
+  }
+
+  function onError(err) {
+    btnFind.disabled = false;
+    btnFind.innerHTML = '<span>🧭</span> Find';
+    const msgs = {
+      1: '❌ Location access denied. Please allow GPS permission and try again.',
+      2: '❌ Location unavailable. Check your device GPS signal.',
+      3: '❌ Request timed out. Please try again.',
+    };
+    setStatus('error', msgs[err.code] || '❌ An unknown location error occurred.');
+  }
+
+  /* ── Find button ─────────────────────────────────────────────── */
+  btnFind.addEventListener('click', function () {
+    if (!navigator.geolocation) {
+      setStatus('error', '❌ Geolocation is not supported by your browser.');
+      return;
+    }
+
+    btnFind.disabled = true;
+    btnFind.innerHTML = '<span>⏳</span> Locating…';
+    setStatus('info', 'Requesting GPS location…', true);
+
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+
+    /* Phase 1 — fast coarse fix (WiFi / cell tower, ~1-2 sec) */
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      onPosition(pos);                       // show route immediately
+      /* Phase 2 — accurate GPS watch for real-time updates */
+      watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 30000,
+      });
+    }, function () {
+      /* coarse fix failed — fall straight through to high-accuracy watch */
+      watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 30000,
+      });
+    }, {
+      enableHighAccuracy: false,
+      maximumAge: 60000,   /* accept a cached position up to 1 min old */
+      timeout: 5000,
+    });
+  });
+
+  /* ── Clean up on page hide ───────────────────────────────────── */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden' && watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+  });
+
+})();
+</script>
+</body>
+</html>

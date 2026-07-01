@@ -5,6 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>City of Balanga Tech4ed Training Center</title>
 
+  <script>
+    /* ── Anti-tamper protection ───────────────────────────────────── */
+    // Disable right-click context menu
+    document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+    // Disable copy, cut, paste, drag
+    ['copy','cut','paste','dragstart','drop','selectstart'].forEach(function(evt){
+      document.addEventListener(evt, function(e){ e.preventDefault(); });
+    });
+
+    // Block DevTools keyboard shortcuts
+    document.addEventListener('keydown', function(e){
+      // F12
+      if(e.keyCode === 123) { e.preventDefault(); return false; }
+      // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C (DevTools)
+      if(e.ctrlKey && e.shiftKey && [73,74,67].includes(e.keyCode)){ e.preventDefault(); return false; }
+      // Ctrl+U (View Source)
+      if(e.ctrlKey && e.keyCode === 85){ e.preventDefault(); return false; }
+      // Ctrl+A (Select All)
+      if(e.ctrlKey && e.keyCode === 65){ e.preventDefault(); return false; }
+      // Ctrl+C / Ctrl+X
+      if(e.ctrlKey && [67,88].includes(e.keyCode)){ e.preventDefault(); return false; }
+    });
+
+    // DevTools open detection — reload if console is opened
+    (function devToolsDetect(){
+      var threshold = 160;
+      setInterval(function(){
+        if(window.outerWidth - window.innerWidth > threshold ||
+           window.outerHeight - window.innerHeight > threshold){
+          document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;font-size:1.2rem;color:#0d2a6e;text-align:center;padding:2rem;">⛔ Access Restricted.<br>Please close Developer Tools to continue.</div>';
+        }
+      }, 1000);
+    })();
+  </script>
+
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Leaflet Routing Machine CSS -->
@@ -538,7 +574,7 @@
   // DEST_ROUTE: road-accessible point where the route line ends (on the path)
   const DEST_ROUTE = { lat: 14.6759911740282,   lng: 120.53598287734538 };
   // DEST_PIN: exact building location for the marker
-  const DEST_PIN   = { lat: 14.675632420815127,  lng: 120.53611693164521 };
+  const DEST_PIN   = { lat: 14.67563180789172,  lng: 120.53611028225956 };
 
   /* ── Elements ─────────────────────────────────────────────────── */
   const btnFind       = document.getElementById('btn-find');

@@ -73,6 +73,10 @@
       overflow: hidden;
     }
 
+    /* FIX: sa Info at Courses, ang buong page ang nag-scroll (hindi na pinipiga ng footer ang content) */
+    .page-wrapper { overflow-y: auto; overflow-x: hidden; }
+    #section-info, #section-courses { flex: 1 0 auto; overflow: visible; }
+
     /* ── Header ───────────────────────────────────────── */
     header {
       background: linear-gradient(135deg, #0d2a6e 0%, #1a3a8f 35%, #1e3a5f 65%, #0f4c75 100%);
@@ -229,6 +233,8 @@
       animation: pop-in .45s cubic-bezier(.34,1.56,.64,1);
       position: relative;
       overflow: hidden;
+      flex-shrink: 0;   /* huwag paliitin ang card — para hindi maputol ang Courses button */
+      margin: auto;     /* centered kapag kasya, scrollable kapag hindi */
     }
     .info-hero-card::before {
       content: '';
@@ -1281,6 +1287,21 @@
     @media (max-width: 380px) {
       .nav-tab .tab-icon { display: none; }
     }
+
+    /* ── COMPACT: kasya sa isang screen (Info + Courses button + footer) ── */
+    #section-info { padding: 1rem 1.25rem; }
+    .info-hero-card { padding: 1.4rem 2rem 1.6rem; }
+    .info-logo-wrap { width: 72px; height: 72px; margin-bottom: .7rem; }
+    .info-logo-wrap img, .info-logo-placeholder { width: 58px; height: 58px; }
+    .info-logo-placeholder { font-size: 1.7rem; }
+    .info-center-badge { margin-bottom: .5rem; }
+    .info-subtitle { margin-bottom: .9rem; }
+    .info-divider  { margin-bottom: .9rem; }
+    .info-badges   { margin-bottom: 1.1rem; }
+    #btn-courses   { padding: .65rem 2rem; font-size: .95rem; }
+    .footer-top { padding: .8rem 1.5rem .6rem; }
+    .footer-middle { padding: .6rem 1.5rem; }
+    .footer-bottom-inner { padding: .4rem 1.5rem .5rem; }
   </style>
 </head>
 <body>
